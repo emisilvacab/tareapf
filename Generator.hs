@@ -53,6 +53,13 @@ buscarLetsEnCadaFuncion funs = undefined
 eliminarUltimaComa :: String -> String
 eliminarUltimaComa s = if (last s == ',') then reverse (tail (reverse s)) else s
 
+contarLets :: Expr -> Integer
+contarLets (Infix _ e1 e2) = contarLets e1 + contarLets e2
+contarLets (If _ et ef) = contarLets et + contarLets ef
+contarLets (Let _ e1 e2) = 1 + contarLets e1 + contarLets e2 
+contarLets (App _ expresiones) = sum (map contarLets expresiones)
+contarLets _ = 0
+
 
 -- CODE GENERATOR
 -- TODO: Print del main
@@ -78,9 +85,9 @@ genExpresion contador (If cond et ef) = (concat ["(", fst resuCond, "?", fst res
         resuCond = genExpresion contador cond
         resuEt = genExpresion (snd resuCond) et
         resuEf = genExpresion (snd resuEt) ef
-genExpresion contador (Let (x, _) e1 e2) = (concat ["_let", (show contador), "(", textoE1, ")"], contadorFinal)
+genExpresion contador (Let (x, _) e1 e2) = ("_let" ++ (show (contadorFinal + contarLets e2)) ++ "(" ++ textoE1 ++ ")", contadorFinal + 1)
     where
-        (textoE1, contadorFinal) = genExpresion (contador + 1) e1
+        (textoE1, contadorFinal) = genExpresion contador e1
 genExpresion contador (App nombre expresiones) = (genNombre nombre ++ "(" ++ dropLast texto ++ ")", contadorFinal)
     where
         (texto, contadorFinal) = generarExpresiones contador expresiones
