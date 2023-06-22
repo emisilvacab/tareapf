@@ -60,7 +60,7 @@ contarLets (Let _ e1 e2) = 1 + contarLets e1 + contarLets e2
 contarLets (App _ expresiones) = sum (map contarLets expresiones)
 contarLets _ = 0
 
-
+-- ("_let" ++ (show (contadorFinal + contarLets e2)) ++ "(" ++ textoE1 ++ ")", contadorFinal + 1)
 -- CODE GENERATOR
 -- TODO: Print del main
 genProgram :: Program -> String
@@ -85,7 +85,7 @@ genExpresion contador (If cond et ef) = (concat ["(", fst resuCond, "?", fst res
         resuCond = genExpresion contador cond
         resuEt = genExpresion (snd resuCond) et
         resuEf = genExpresion (snd resuEt) ef
-genExpresion contador (Let (x, _) e1 e2) = ("_let" ++ (show (contadorFinal + contarLets e2)) ++ "(" ++ textoE1 ++ ")", contadorFinal + 1)
+genExpresion contador (Let (x, _) e1 e2) = ("me llamo carlos", 0)
     where
         (textoE1, contadorFinal) = genExpresion contador e1
 genExpresion contador (App nombre expresiones) = (genNombre nombre ++ "(" ++ dropLast texto ++ ")", contadorFinal)
