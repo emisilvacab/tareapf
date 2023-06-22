@@ -10,8 +10,7 @@ int _let1(int _x){
 int _let0(int _x){
 return (_x); };
 return (_let1(2)); };
-return (_let0(1)); };
-int main() {int _let0(int _x){
+return (_let0(1)); };int main() {
+int _let0(int _x){
 return ((_foo(_x,4) + _bar(_x))); };
-
 printf("%d\n",_let0(2)); }

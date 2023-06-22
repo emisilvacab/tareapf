@@ -57,13 +57,13 @@ eliminarUltimaComa s = if (last s == ',') then reverse (tail (reverse s)) else s
 -- CODE GENERATOR
 -- TODO: Print del main
 genProgram :: Program -> String
-genProgram (Program defs main) = "#include <stdio.h>\n" ++ concat (map (\def@(FunDef typedFun vars expr) -> genFirmaFuncion typedFun vars ++ fst (buscarLet (getExpresionFromFunDef def) 0 "") ++ genCuerpoFuncion expr 0) defs) ++  "int main() {" ++ fst (buscarLet main 0 "") ++ "\nprintf(\"%d\\n\"," ++ fst (genExpresion 0 main) ++ "); }" 
+genProgram (Program defs main) = "#include <stdio.h>" ++ concat (map (\def@(FunDef typedFun vars expr) -> genFirmaFuncion typedFun vars ++ fst (buscarLet (getExpresionFromFunDef def) 0 "") ++ genCuerpoFuncion expr 0) defs) ++  "int main() {" ++ fst (buscarLet main 0 "") ++ "\nprintf(\"%d\\n\"," ++ fst (genExpresion 0 main) ++ "); }" 
 
 genCuerpoFuncion :: Expr -> Integer-> String
-genCuerpoFuncion expresion contador = concat ["return (", fst (genExpresion contador expresion), "); };\n"]
+genCuerpoFuncion expresion contador = concat ["\nreturn (", fst (genExpresion contador expresion), "); };"]
 
 genFirmaFuncion :: TypedFun -> [Name] -> String
-genFirmaFuncion (nombre, (Sig tipos tipoRetorno)) parametros = concat [getTipo tipoRetorno, " ", genNombre nombre, "(" , eliminarUltimaComa (concat (map asociarVariable (zip tipos parametros))), "){\n"] --revisa que pasa con las comas cuando hay muchos parametros
+genFirmaFuncion (nombre, (Sig tipos tipoRetorno)) parametros = concat ["\n", getTipo tipoRetorno, " ", genNombre nombre, "(" , eliminarUltimaComa (concat (map asociarVariable (zip tipos parametros))), "){"] --revisa que pasa con las comas cuando hay muchos parametros
 
 genExpresion :: Integer -> Expr -> (String, Integer)
 genExpresion contador (Var n) = (genNombre n, contador)
@@ -96,11 +96,11 @@ generarExpresiones contador (e:es) =
     --firmasE1 ++ definirLet contadorActualizado x e1 e2 ++ cuerposE1, contadorActualizado + 1)
     --  definirFirmaLet contadorFinal x ++ buscarLet e1 contador textoActual ++ genCuerpoFuncion buscarLet e2 contadorActualizado textoActual
 buscarLet :: Expr -> Integer -> String -> (String, Integer)
-buscarLet (Let x e1 e2) contador textoActual = (firmaActual ++ definiciones ++ cuerpos ++ genCuerpoFuncion e2 contadorFinal, contadorFinal + 1)
+buscarLet (Let x e1 e2) contador textoActual = (letsEnE1 ++ firmaActual ++ definiciones ++ genCuerpoFuncion e2 primerContador, primerContador + 1)
     where
-        (definiciones, primerContador) = buscarLet e1 contador textoActual
-        (cuerpos, contadorFinal) = buscarLet e2 primerContador definiciones
-        firmaActual = definirFirmaLet contadorFinal x
+        (letsEnE1, contadorPostE1) = buscarLet e1 contador textoActual
+        (definiciones, primerContador) = buscarLet e2 contadorPostE1 ""
+        firmaActual = definirFirmaLet primerContador x
 buscarLet (Var _) contador textoActual = (textoActual, contador)
 buscarLet (IntLit val) contador textoActual = (textoActual, contador)
 buscarLet (BoolLit val) contador textoActual = (textoActual, contador)
