@@ -96,10 +96,11 @@ generarExpresiones contador (e:es) =
     --firmasE1 ++ definirLet contadorActualizado x e1 e2 ++ cuerposE1, contadorActualizado + 1)
     --  definirFirmaLet contadorFinal x ++ buscarLet e1 contador textoActual ++ genCuerpoFuncion buscarLet e2 contadorActualizado textoActual
 buscarLet :: Expr -> Integer -> String -> (String, Integer)
-buscarLet (Let x e1 e2) contador textoActual = definirFirmaLet contadorFinal x ++ definiciones ++ buscarLet e2 contadorActualizado textoActual ++ genCuerpoFuncion e2
+buscarLet (Let x e1 e2) contador textoActual = ( firmaActual++ definiciones ++ cuerpos ++ genCuerpoFuncion e2, contadorFinal + 2)
     where
         (definiciones, primerContador) = buscarLet e1 contador textoActual
-        (textoFinal, contadorActualizado) = buscarLet e2 primerContador nuevoTexto
+        (cuerpos, contadorFinal) = buscarLet e2 primerContador definiciones
+        firmaActual = definirFirmaLet (contadorFinal + 1) x
 buscarLet (Var _) contador textoActual = (textoActual, contador)
 buscarLet (IntLit val) contador textoActual = (textoActual, contador)
 buscarLet (BoolLit val) contador textoActual = (textoActual, contador)
@@ -118,6 +119,6 @@ buscarLet (App nombre expresiones) contador textoActual  = foldl (\(text, acum) 
 -- definirLet contador (varName, tipoVar) _ e2 = genFirmaFuncion ("let" ++ show contador, Sig [tipoVar] tipoVar) [varName] ++ genCuerpoFuncion e2
 
 definirFirmaLet :: Integer -> TypedVar -> String
-definirLet contador (varName, tipoVar) _ _ = genFirmaFuncion ("let" ++ show contador, Sig [tipoVar] tipoVar) [varName]
+definirFirmaLet contador (varName, tipoVar) = genFirmaFuncion ("let" ++ show contador, Sig [tipoVar] tipoVar) [varName]
 
 
