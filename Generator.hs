@@ -60,11 +60,11 @@ contarLets (Let _ e1 e2) = 1 + contarLets e1 + contarLets e2
 contarLets (App _ expresiones) = sum (map contarLets expresiones)
 contarLets _ = 0
 
--- ("_let" ++ (show (contadorFinal + contarLets e2)) ++ "(" ++ textoE1 ++ ")", contadorFinal + 1)
+
 -- CODE GENERATOR
 -- TODO: Print del main
 genProgram :: Program -> String
-genProgram (Program defs main) = "#include <stdio.h>" ++ concat (map (\def@(FunDef typedFun vars expr) -> genFirmaFuncion typedFun vars ++ fst (buscarLet (getExpresionFromFunDef def) 0 "") ++ genCuerpoFuncion expr 0) defs) ++  "int main() {" ++ fst (buscarLet main 0 "") ++ "\nprintf(\"%d\\n\"," ++ fst (genExpresion 0 main) ++ "); }" 
+genProgram (Program defs main) = "#include <stdio.h>" ++ concat (map (\def@(FunDef typedFun vars expr) -> genFirmaFuncion typedFun vars ++ fst (buscarLet (getExpresionFromFunDef def) 0 "") ++ genCuerpoFuncion expr 0) defs) ++  "\nint main() {" ++ fst (buscarLet main 0 "") ++ "\nprintf(\"%d\\n\"," ++ fst (genExpresion 0 main) ++ "); }" 
 
 genCuerpoFuncion :: Expr -> Integer-> String
 genCuerpoFuncion expresion contador = concat ["\nreturn (", fst (genExpresion contador expresion), "); };"]
@@ -85,9 +85,10 @@ genExpresion contador (If cond et ef) = (concat ["(", fst resuCond, "?", fst res
         resuCond = genExpresion contador cond
         resuEt = genExpresion (snd resuCond) et
         resuEf = genExpresion (snd resuEt) ef
-genExpresion contador (Let (x, _) e1 e2) = ("me llamo carlos", 0)
+genExpresion contador (Let (x, _) e1 e2) = ("_let" ++ (show (contadorFinal + cantLetsEnE2)) ++ "(" ++ textoE1 ++ ")", contadorFinal + cantLetsEnE2 + 1)
     where
         (textoE1, contadorFinal) = genExpresion contador e1
+        cantLetsEnE2 = contarLets e2
 genExpresion contador (App nombre expresiones) = (genNombre nombre ++ "(" ++ dropLast texto ++ ")", contadorFinal)
     where
         (texto, contadorFinal) = generarExpresiones contador expresiones
@@ -100,14 +101,13 @@ generarExpresiones contador (e:es) =
   in (expresionGenerada ++ "," ++ expresionesGeneradas, nuevoContador)
 
 
-    --firmasE1 ++ definirLet contadorActualizado x e1 e2 ++ cuerposE1, contadorActualizado + 1)
-    --  definirFirmaLet contadorFinal x ++ buscarLet e1 contador textoActual ++ genCuerpoFuncion buscarLet e2 contadorActualizado textoActual
+
 buscarLet :: Expr -> Integer -> String -> (String, Integer)
-buscarLet (Let x e1 e2) contador textoActual = (letsEnE1 ++ firmaActual ++ definiciones ++ genCuerpoFuncion e2 primerContador, primerContador + 1)
+buscarLet (Let x e1 e2) contador textoActual = (letsEnE1 ++ firmaActual ++ definiciones ++ genCuerpoFuncion e2 (contadorDespuesDeLosDeAdentro - 1), contadorDespuesDeLosDeAdentro + 1)
     where
         (letsEnE1, contadorPostE1) = buscarLet e1 contador textoActual
-        (definiciones, primerContador) = buscarLet e2 contadorPostE1 ""
-        firmaActual = definirFirmaLet primerContador x
+        (definiciones, contadorDespuesDeLosDeAdentro) = buscarLet e2 contadorPostE1 ""
+        firmaActual = definirFirmaLet contadorDespuesDeLosDeAdentro x
 buscarLet (Var _) contador textoActual = (textoActual, contador)
 buscarLet (IntLit val) contador textoActual = (textoActual, contador)
 buscarLet (BoolLit val) contador textoActual = (textoActual, contador)
@@ -121,9 +121,6 @@ buscarLet (If cond et ef) contador textoActual = (concat [textoActual, texto, te
         (texto2, contFinal) = buscarLet ef contAct textoActual
 buscarLet (App nombre expresiones) contador textoActual  = foldl (\(text, acum) expresion -> buscarLet expresion acum textoActual) (textoActual, contador) expresiones
 
--- define la funcion para un let
--- definirLet :: Integer -> TypedVar -> Expr -> Expr -> String
--- definirLet contador (varName, tipoVar) _ e2 = genFirmaFuncion ("let" ++ show contador, Sig [tipoVar] tipoVar) [varName] ++ genCuerpoFuncion e2
 
 definirFirmaLet :: Integer -> TypedVar -> String
 definirFirmaLet contador (varName, tipoVar) = genFirmaFuncion ("let" ++ show contador, Sig [tipoVar] tipoVar) [varName]
